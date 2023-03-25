@@ -1,35 +1,59 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import WindowedContainer, { useWindowedBoundaries } from "./WindowedContainer";
+import "./App.css";
+import { memo, useDeferredValue, useMemo } from "react";
 
-function App() {
-  const [count, setCount] = useState(0)
+const ITEM_HEIGHT = 35;
+
+function MyListItem({ item, index }: any) {
+  const { top, bottom } = useWindowedBoundaries();
+  const itemTop = useMemo(() => index * ITEM_HEIGHT, []);
+  const itemBottom = useMemo(() => index * ITEM_HEIGHT + ITEM_HEIGHT, []);
+
+  const deferredListItem = useDeferredValue(`${item} ${index}`);
+
+  if (itemBottom < top || itemTop > bottom) {
+    return null;
+  }
 
   return (
-    <div className="App">
-      <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://reactjs.org" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
+    <div
+      style={{
+        position: "absolute",
+        height: ITEM_HEIGHT,
+        top: itemTop,
+        left: 0,
+        scrollBehavior: "smooth",
+      }}
+    >
+      {deferredListItem}
     </div>
-  )
+  );
 }
 
-export default App
+const MemoMyListItem = memo(MyListItem);
+
+function MyList() {
+  const scrollContainerStyle = { height: listOfStuff.length * ITEM_HEIGHT };
+
+  return (
+    <div style={scrollContainerStyle}>
+      {listOfStuff.map((item, index) => (
+        <MemoMyListItem key={index} item={item} index={index} />
+      ))}
+    </div>
+  );
+}
+
+function App() {
+  return (
+    <div className="App">
+      <WindowedContainer>
+        <MyList />
+      </WindowedContainer>
+    </div>
+  );
+}
+
+export default App;
+
+const listOfStuff = Array(10000).fill("This is item");
